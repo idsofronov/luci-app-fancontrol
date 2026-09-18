@@ -1,6 +1,6 @@
 # luci-app-fancontrol
 
-[English](README.md) | **简体中文**
+[English](README.en.md) | **简体中文** | [Русский](README.ru.md)
 
 适用于 GL.iNet GL-MT3600BE / Beryl 7 的 LuCI 风扇控制插件，面向
 ImmortalWrt / OpenWrt 风格固件，已适配 `apk` 包管理环境。

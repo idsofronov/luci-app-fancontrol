@@ -1,6 +1,6 @@
 # luci-app-fancontrol
 
-[简体中文](README.md) | **English**
+[简体中文](README.zh.md) | **English** | [Русский](README.ru.md)
 
 Simple LuCI fan control for GL.iNet GL-MT3600BE / Beryl 7 running
 ImmortalWrt or OpenWrt-style firmware with `apk` packaging.
