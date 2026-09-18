@@ -14,9 +14,9 @@ ImmortalWrt или прошивки в стиле OpenWrt с пакетной с
 Скриншоты с GL.iNet GL-MT3600BE / Beryl 7 под управлением ImmortalWrt 25.12
 с темой Argon.
 
-![Desktop fan control page](docs/images/fancontrol-desktop.png)
+![Страница управления вентилятором на компьютере](docs/images/fancontrol-desktop.png)
 
-<img src="docs/images/fancontrol-mobile.png" alt="Narrow fan control page" width="360">
+<img src="docs/images/fancontrol-mobile.png" alt="Узкая страница управления вентилятором" width="360">
 
 ## Возможности
 
