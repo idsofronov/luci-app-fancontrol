@@ -70,7 +70,7 @@ smoothed_temp=""
 spinup_until="0"
 bad_rpm_count="0"
 rpm_observed_max="0"
-reason="初始化"
+reason="Initializing"
 fault="0"
 
 log_msg() {
@@ -280,14 +280,14 @@ percent_for_level() {
 
 label_for_level() {
 	case "$1" in
-		starting) printf '启动确认中' ;;
-		low) printf '低速散热' ;;
-		medium) printf '中速散热' ;;
-		high) printf '高速散热' ;;
-		full) printf '满速保护' ;;
-		fixed) printf '固定风力' ;;
-		fault) printf '异常保护' ;;
-		*) printf '停止' ;;
+		starting) printf 'Confirming startup' ;;
+		low) printf 'Low-speed cooling' ;;
+		medium) printf 'Medium-speed cooling' ;;
+		high) printf 'High-speed cooling' ;;
+		full) printf 'Full-speed protection' ;;
+		fixed) printf 'Fixed fan power' ;;
+		fault) printf 'Fault protection' ;;
+		*) printf 'Stopped' ;;
 	esac
 }
 
@@ -412,18 +412,18 @@ load_curve_config() {
 			full_c="$(uci_get auto_full_temp 86)"
 
 			if ! valid_c_range "$stop_c" 45 70; then
-				curve_reason="停止温度必须在 45-70°C"
+				curve_reason="Stop temperature must be between 45-70°C"
 			elif ! valid_c_range "$low_c" 55 78; then
-				curve_reason="低速启动温度必须在 55-78°C"
+				curve_reason="Low-speed start temperature must be between 55-78°C"
 			elif ! valid_c_range "$med_c" 60 84; then
-				curve_reason="中速启动温度必须在 60-84°C"
+				curve_reason="Medium-speed start temperature must be between 60-84°C"
 			elif ! valid_c_range "$high_c" 68 88; then
-				curve_reason="高速启动温度必须在 68-88°C"
+				curve_reason="High-speed start temperature must be between 68-88°C"
 			elif ! valid_c_range "$full_c" 80 90; then
-				curve_reason="满速保护温度必须在 80-90°C"
+				curve_reason="Full-speed protection temperature must be between 80-90°C"
 			elif [ $((low_c - stop_c)) -lt 3 ] || [ $((med_c - low_c)) -lt 3 ] || \
 				[ $((high_c - med_c)) -lt 3 ] || [ $((full_c - high_c)) -lt 3 ]; then
-				curve_reason="温度必须按停止、低速、中速、高速、满速递增，且相邻至少间隔 3°C"
+				curve_reason="Temperatures must increase in order: stop, low, medium, high, full, with at least 3°C between adjacent points"
 			else
 				set_curve_from_c "$stop_c" "$low_c" "$med_c" "$high_c" "$full_c"
 				return
@@ -495,7 +495,7 @@ load_state() {
 	spinup_until="$(clamp "${spinup_until:-0}" 0 2147483647)"
 	bad_rpm_count="$(clamp "${bad_rpm_count:-0}" 0 100)"
 	rpm_observed_max="$(clamp "${rpm_observed_max:-0}" 0 99999)"
-	reason="${reason:-初始化}"
+	reason="${reason:-Initializing}"
 	fault="$(clamp "${fault:-0}" 0 1)"
 }
 
@@ -564,8 +564,8 @@ mark_temp_fault() {
 
 	temp_fault=1
 	if [ -z "$temp_fault_reason" ]; then
-		temp_fault_reason="${source} 温度传感器异常"
-		[ -n "$value" ] && temp_fault_reason="${temp_fault_reason}（读数：${value}）"
+		temp_fault_reason="${source} temperature sensor fault"
+		[ -n "$value" ] && temp_fault_reason="${temp_fault_reason} (reading: ${value})"
 	fi
 }
 
@@ -627,7 +627,7 @@ collect_temps() {
 
 	if [ "$temp_fault" = "0" ] && [ -z "$control_temp" ]; then
 		temp_fault=1
-		temp_fault_reason="没有可用温度传感器"
+		temp_fault_reason="No available temperature sensor"
 	fi
 }
 
@@ -900,14 +900,14 @@ check_fault_recovery() {
 		spinup_until=0
 		bad_rpm_count=0
 		fault=0
-		reason="转速恢复正常，退出异常保护，先保持满速保护"
+		reason="RPM back to normal, exiting fault protection, holding full-speed protection first"
 		set_fan_percent_raw 100
 		save_state
 		return 1
 	fi
 
 	set_fan_percent_raw 100
-	reason="转速仍异常，保持满速保护"
+	reason="RPM still abnormal, holding full-speed protection"
 	save_state
 	return 0
 }
@@ -925,7 +925,7 @@ check_rpm_health() {
 
 	if [ "$spinup_until" -gt "$ts" ]; then
 		bad_rpm_count=0
-		reason="启动确认中，等待转速传感器刷新"
+		reason="Confirming startup, waiting for RPM sensor to update"
 		save_state
 		return 0
 	fi
@@ -936,11 +936,11 @@ check_rpm_health() {
 	if is_uint "$rpm" && [ "$rpm" -lt "$floor" ]; then
 		bad_rpm_count=$((bad_rpm_count + 1))
 		if [ "$bad_rpm_count" -ge "$BAD_RPM_LIMIT" ]; then
-			apply_fault "$ts" "连续检测不到有效转速，已满速保护"
+			apply_fault "$ts" "No valid RPM detected repeatedly, full-speed protection applied"
 			return 0
 		fi
 
-		reason="转速低于安全阈值 ${floor} RPM，正在第 ${bad_rpm_count}/${BAD_RPM_LIMIT} 次确认"
+		reason="RPM below safety threshold ${floor} RPM, confirming ${bad_rpm_count}/${BAD_RPM_LIMIT}"
 		save_state
 		return 0
 	fi
@@ -960,17 +960,17 @@ auto_once() {
 	heartbeat
 
 	if [ "$temp_fault" = "1" ]; then
-		apply_fault "$ts" "$temp_fault_reason，已满速保护"
+		apply_fault "$ts" "$temp_fault_reason, full-speed protection applied"
 		return
 	fi
 
 	if [ "$curve_valid" != "1" ]; then
-		reason="自定义温度无效，已使用推荐曲线：${curve_reason}"
+		reason="Custom temperature invalid, using recommended curve: ${curve_reason}"
 	fi
 
 	raw="$control_temp"
 	smooth_temp "$raw" >/dev/null || {
-		apply_fault "$ts" "温度平滑计算失败，已满速保护"
+		apply_fault "$ts" "Temperature smoothing calculation failed, full-speed protection applied"
 		return
 	}
 	temp="$smoothed_temp"
@@ -994,21 +994,21 @@ auto_once() {
 			since_stop=$((ts - last_stop))
 			if [ "$last_stop" -gt 0 ] && [ "$since_stop" -lt "$START_DEBOUNCE" ] && \
 				[ "$temp" -lt $((AUTO_START_LOW + RESTART_EXTRA)) ] && [ "$temp" -lt "$AUTO_START_MED" ]; then
-				reason="刚停转 ${since_stop} 秒，防频繁启停保护中"
+				reason="Stopped ${since_stop}s ago, protecting against frequent on/off cycling"
 				save_state
 				return
 			fi
 
 			if [ "$start_pending_since" -le 0 ]; then
 				start_pending_since="$ts"
-				reason="最高温度来自 ${control_source}，达到低速阈值，等待 ${START_CONFIRM} 秒确认后启动"
+				reason="Highest temperature from ${control_source}, reached low-speed threshold, waiting ${START_CONFIRM}s to confirm before starting"
 				save_state
 				return
 			fi
 
 			since_start_pending=$((ts - start_pending_since))
 			if [ "$since_start_pending" -lt "$START_CONFIRM" ]; then
-				reason="最高温度来自 ${control_source}，低速启动确认中 ${since_start_pending}/${START_CONFIRM} 秒"
+				reason="Highest temperature from ${control_source}, confirming low-speed start ${since_start_pending}/${START_CONFIRM}s"
 				save_state
 				return
 			fi
@@ -1017,13 +1017,13 @@ auto_once() {
 		fi
 
 		if [ "$level" != "off" ] && [ "$up" != "full" ] && [ "$since_change" -lt "$UP_MIN_INTERVAL" ]; then
-			reason="最高温度来自 ${control_source}，升档等待中，避免频繁变速"
+			reason="Highest temperature from ${control_source}, waiting to upshift to avoid frequent speed changes"
 			save_state
 			return
 		fi
 
 		apply_level "$up" "$ts"
-		reason="最高温度来自 ${control_source}，判断温度 $((temp / 1000))°C，升档到 $(label_for_level "$up")"
+		reason="Highest temperature from ${control_source}, temperature $((temp / 1000))°C, upshifting to $(label_for_level "$up")"
 		save_state
 		return
 	fi
@@ -1044,22 +1044,22 @@ auto_once() {
 		elapsed=$((ts - pending_since))
 		run_elapsed=$((ts - last_start))
 		if [ "$down" = "off" ] && [ "$run_elapsed" -lt "$AUTO_MIN_RUN" ]; then
-			reason="温度已低，但风扇至少运行 ${AUTO_MIN_RUN} 秒后才允许停止"
+			reason="Temperature is low, but the fan must run for at least ${AUTO_MIN_RUN}s before it may stop"
 		elif [ "$elapsed" -ge "$hold" ]; then
 			apply_level "$down" "$ts"
-			reason="最高温度来自 ${control_source}，稳定回落后降档到 $(label_for_level "$down")"
+			reason="Highest temperature from ${control_source}, downshifting to $(label_for_level "$down") after stabilizing"
 			save_state
 			return
 		else
-			reason="最高温度来自 ${control_source}，低于回落阈值，稳定 ${hold} 秒后再降档或停转"
+			reason="Highest temperature from ${control_source}, below downshift threshold, will downshift or stop after ${hold}s of stability"
 		fi
 	else
 		pending_level=""
 		pending_since=0
 		if [ "$level" = "off" ]; then
-			reason="最高温度来自 ${control_source}，判断温度 $((temp / 1000))°C，未达到 $((AUTO_START_LOW / 1000))°C 启动阈值，保持停止"
+			reason="Highest temperature from ${control_source}, temperature $((temp / 1000))°C, below the $((AUTO_START_LOW / 1000))°C start threshold, staying stopped"
 		else
-			reason="最高温度来自 ${control_source}，判断温度 $((temp / 1000))°C，在缓冲区内保持 $(label_for_level "$level")"
+			reason="Highest temperature from ${control_source}, temperature $((temp / 1000))°C, within buffer zone, holding $(label_for_level "$level")"
 		fi
 	fi
 
@@ -1092,7 +1092,7 @@ fixed_once() {
 	last_start="$ts"
 	spinup_until=0
 	bad_rpm_count=0
-	reason="固定风力调试模式"
+	reason="Fixed fan power debug mode"
 	fault=0
 	save_state
 }

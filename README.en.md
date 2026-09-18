@@ -80,17 +80,17 @@ unsupported.
 Run one of the following commands over SSH on the router:
 
 ```sh
-wget -O- https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh | sh
+wget -O- https://raw.githubusercontent.com/idsofronov/luci-app-fancontrol/main/install.sh | sh
 ```
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/idsofronov/luci-app-fancontrol/main/install.sh | sh
 ```
 
 Safer manual flow:
 
 ```sh
-wget -O /tmp/install-fancontrol.sh https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh
+wget -O /tmp/install-fancontrol.sh https://raw.githubusercontent.com/idsofronov/luci-app-fancontrol/main/install.sh
 sh /tmp/install-fancontrol.sh
 ```
 
@@ -114,7 +114,7 @@ If you prefer an install that is tracked by the `apk` package database, download
 the `.apk` from Releases, or install the rolling build directly on the router:
 
 ```sh
-wget -O /tmp/luci-app-fancontrol.apk https://github.com/zkcaryq/luci-app-fancontrol/releases/download/continuous/luci-app-fancontrol_latest_all.apk
+wget -O /tmp/luci-app-fancontrol.apk https://github.com/idsofronov/luci-app-fancontrol/releases/download/continuous/luci-app-fancontrol_latest_all.apk
 apk add /tmp/luci-app-fancontrol.apk
 ```
 

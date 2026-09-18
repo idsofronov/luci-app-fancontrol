@@ -2,7 +2,7 @@
 
 set -u
 
-REPO="zkcaryq/luci-app-fancontrol"
+REPO="idsofronov/luci-app-fancontrol"
 BRANCH="${BRANCH:-main}"
 TARBALL_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 TMP_BASE="/tmp"

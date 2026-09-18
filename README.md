@@ -1,59 +1,63 @@
 # luci-app-fancontrol
 
-**简体中文** | [English](README.en.md)
+**English** | [简体中文](README.zh.md)
 
-适用于 GL.iNet GL-MT3600BE / Beryl 7 的 LuCI 风扇控制插件，面向
-ImmortalWrt / OpenWrt 风格固件，已适配 `apk` 包管理环境。
+Simple LuCI fan control for GL.iNet GL-MT3600BE / Beryl 7 running
+ImmortalWrt or OpenWrt-style firmware with `apk` packaging.
 
-安装后会在 LuCI 的 **系统 > 风扇控制** 下新增页面。默认安装后为
-`system` 模式，不会立即接管风扇；只有用户选择自动温控或固定风力后才会接管。
+After installation, the package adds **System > Fan Control** to LuCI. The
+default mode is `system`, so it does not take over the fan until the user
+selects automatic or fixed control.
 
-## 截图
+## Screenshots
 
-以下截图来自 GL.iNet GL-MT3600BE / Beryl 7，系统为 ImmortalWrt 25.12，
-LuCI 主题为 Argon。
+Screenshots from GL.iNet GL-MT3600BE / Beryl 7 running ImmortalWrt 25.12 with
+Argon theme.
 
-![桌面端风扇控制页面](docs/images/fancontrol-desktop.png)
+![Desktop fan control page](docs/images/fancontrol-desktop.png)
 
-<img src="docs/images/fancontrol-mobile.png" alt="窄屏风扇控制页面" width="360">
+<img src="docs/images/fancontrol-mobile.png" alt="Narrow fan control page" width="360">
 
-## 功能
+## Features
 
-- 在 LuCI **系统 > 风扇控制** 下提供图形页面。
-- 显示 CPU、Wi-Fi、网口温度、风扇实时转速、风力百分比和转速百分比。
-- 自动温控使用关键探头最高温度作为控制温度，避免 Wi-Fi 高温被 CPU 低温掩盖。
-- 支持推荐曲线和自定义温度曲线。
-- 自定义只开放温度点，不开放 PWM/sysfs/风力档位等高级参数。
-- 固定风力模式保留为临时调试用途。
-- 使用 procd 管理主进程，并带轻量看门狗。
-- 默认静默运行，正常轮询和正常切档不写 fancontrol 系统日志。
+- LuCI page under **System > Fan Control**.
+- Shows CPU, Wi-Fi, Ethernet temperatures, realtime fan RPM, fan power, and
+  estimated fan speed percentage.
+- Uses the highest valid key sensor temperature as the control temperature, so
+  hot Wi-Fi chips are not hidden by a cooler CPU reading.
+- Supports a recommended curve and custom temperature points.
+- Custom mode only exposes temperature points. PWM, sysfs paths, and fan power
+  levels stay protected.
+- Fixed fan power mode remains a short-term diagnostic tool.
+- Procd-managed daemon plus a lightweight watchdog.
+- Quiet logging by default.
 
-## 兼容性
+## Compatibility
 
-### 已测试设备
+### Tested Device
 
-| 项目 | 值 |
+| Item | Value |
 | --- | --- |
-| 设备 | GL.iNet GL-MT3600BE / Beryl 7 |
-| 固件 | ImmortalWrt 25.12 / OpenWrt 风格系统 |
+| Device | GL.iNet GL-MT3600BE / Beryl 7 |
+| Firmware family | ImmortalWrt 25.12 / OpenWrt-style system |
 | Target | mediatek / filogic |
-| 包管理器 | `apk` |
-| 风扇驱动 | `pwm-fan` |
+| Package manager | `apk` |
+| Kernel fan driver | `pwm-fan` |
 
-期望的 sysfs 节点：
+Expected sysfs nodes:
 
-- CPU 温度：`/sys/class/hwmon/*/name = cpu_thermal` 或
+- CPU temperature: `/sys/class/hwmon/*/name = cpu_thermal` or
   `/sys/class/thermal/thermal_zone0/temp`
-- 风扇驱动：`/sys/class/hwmon/*/name = pwmfan`
-- 风扇转速：`fan1_input`
-- PWM 控制：`pwm1`
+- Fan driver: `/sys/class/hwmon/*/name = pwmfan`
+- Fan RPM: `fan1_input`
+- PWM control: `pwm1`
 
-其他带风扇的 OpenWrt / ImmortalWrt 设备如果同样使用标准 `pwm-fan` sysfs
-布局，也可能适配；未实机测试前请谨慎使用。
+Other fan-equipped OpenWrt / ImmortalWrt devices may work if they expose a
+standard `pwm-fan` sysfs layout. Treat untested devices carefully.
 
-### 快速兼容性检查
+### Quick Compatibility Check
 
-在路由器上执行：
+Run the following commands on the router:
 
 ```sh
 for d in /sys/class/hwmon/hwmon*; do
@@ -66,13 +70,14 @@ for z in /sys/class/thermal/thermal_zone*; do
 done
 ```
 
-如果找不到 `pwmfan`、`fan1_input` 和 `pwm1`，请先视为不支持。
+If you cannot find `pwmfan`, `fan1_input`, and `pwm1`, treat the device as
+unsupported.
 
-## 安装
+## Installation
 
-### 一键安装
+### One-line Install
 
-在路由器 SSH 里执行其一：
+Run one of the following commands over SSH on the router:
 
 ```sh
 wget -O- https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh | sh
@@ -82,109 +87,121 @@ wget -O- https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/inst
 curl -fsSL https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh | sh
 ```
 
-更安全的方式是先下载、查看，再执行：
+Safer manual flow:
 
 ```sh
 wget -O /tmp/install-fancontrol.sh https://raw.githubusercontent.com/zkcaryq/luci-app-fancontrol/main/install.sh
 sh /tmp/install-fancontrol.sh
 ```
 
-`install.sh` 是便捷源码直装方式，不受 `apk` 数据库管理，系统升级或恢复配置时
-可能需要重新安装。对于长期正式使用，如果 Releases 提供 `.apk` 包，更推荐下载
-`.apk` 后用 `apk add ./包名.apk` 本地安装。
+`install.sh` is a convenient source install path. It is not tracked by the `apk`
+package database, so it may need to be reinstalled after firmware upgrades or
+restore operations. For long-term clean installs, prefer a `.apk` package from
+Releases when available and install it with `apk add ./package.apk`.
 
-安装脚本不会改软件源、不会执行 `apk upgrade`、不会重启整机、不会覆盖已有
-`/etc/config/fancontrol`。脚本会把被替换的同名文件备份到 `/tmp`。
+The install script does not change package feeds, does not run `apk upgrade`,
+does not reboot the router, and does not overwrite an existing
+`/etc/config/fancontrol`. Replaced package files are backed up under `/tmp`.
 
 ### Releases APK
 
-本仓库带 GitHub Actions 自动构建流程。每次 `main` 分支更新后，会使用
-ImmortalWrt 25.12 `mediatek/filogic` SDK 构建标准 `.apk` 包，并上传到
-`continuous` 预发布 Release；以后打 `v*` 标签时，会生成对应的正式 Release。
+This repository includes a GitHub Actions build workflow. Every push to `main`
+builds a standard `.apk` package with the ImmortalWrt 25.12 `mediatek/filogic`
+SDK and uploads it to the `continuous` prerelease. Future `v*` tags create fixed
+versioned releases.
 
-如果你想使用受 `apk` 数据库管理的安装方式，可以从 Releases 页面下载 `.apk`，
-或在路由器上安装滚动构建包：
+If you prefer an install that is tracked by the `apk` package database, download
+the `.apk` from Releases, or install the rolling build directly on the router:
 
 ```sh
 wget -O /tmp/luci-app-fancontrol.apk https://github.com/zkcaryq/luci-app-fancontrol/releases/download/continuous/luci-app-fancontrol_latest_all.apk
 apk add /tmp/luci-app-fancontrol.apk
 ```
 
-当前 APK 不再强制依赖 `kmod-hwmon-pwmfan` 软件包。只要你的固件内核已经内建
-或已安装 `pwm-fan` 驱动，并且系统里实际存在 `pwmfan`、`fan1_input`、`pwm1`
-这些 sysfs 节点，就可以直接安装使用；如果节点不存在，插件会安装成功但无法控制风扇。
+The APK no longer hard-depends on the `kmod-hwmon-pwmfan` package. The router
+must already provide the `pwm-fan` driver, either built into the kernel or
+installed separately, and expose the expected `pwmfan`, `fan1_input`, and
+`pwm1` sysfs nodes. If those nodes do not exist, the package may install but it
+will not be able to control the fan.
 
-滚动构建包跟随 `main` 分支，适合尝鲜；长期稳定使用建议优先选择带版本号的
-正式 Release。
+The rolling build follows the `main` branch and is best for early testing. For
+long-term stable use, prefer a versioned Release when available.
 
-### SDK 构建
+### SDK Build
 
-把本包放入 OpenWrt / ImmortalWrt package feed 或 package tree 后，使用常规
-SDK 流程构建。
+Place this package under an OpenWrt / ImmortalWrt package feed or package tree,
+then build it with the normal SDK workflow.
 
 ```sh
 make package/luci-app-fancontrol/compile V=s
 ```
 
-本包标记为 `PKGARCH:=all`。
+The package is marked as `PKGARCH:=all`.
 
-## 如何使用
+## Usage
 
-1. 安装后打开 LuCI，进入 **系统 > 风扇控制**。
-2. 默认是 **系统默认**，插件不接管风扇。
-3. 选择 **自动温控**，再选择：
-   - **推荐曲线**：适合大多数 GL-MT3600BE。
-   - **自定义温度**：只调整温度点，风力档位仍由插件固定保护。
-4. 点击 **保存并应用**。
-5. 页面会显示控制温度、最高温度来源、风扇状态、实时转速和当前原因。
+1. Open LuCI and go to **System > Fan Control**.
+2. The default mode is **System default**. The plugin does not control the fan.
+3. Select **Automatic temperature control**, then choose:
+   - **Recommended curve**: good default for most GL-MT3600BE routers.
+   - **Custom temperature**: adjust temperature points only; fan power levels
+     remain protected.
+4. Click **Save & Apply**.
+5. The page shows control temperature, hottest sensor source, fan state, RPM,
+   and the current reason.
 
-固定风力模式仅建议短时间调试，例如确认风扇是否能转、不同风力声音如何。长期
-运行建议使用自动温控。
+Fixed fan power is intended for short-term diagnostics, such as checking whether
+the fan spins or how loud a given level sounds. Automatic mode is recommended
+for long-term operation.
 
-## 默认温控策略
+## Default Fan Strategy
 
-自动模式推荐曲线：
+Recommended automatic curve:
 
-| 温度 | 风扇状态 |
+| Temperature | Fan state |
 | --- | --- |
-| `< 60°C` | 停止 |
-| `>= 65°C` | 低速 50% |
-| `>= 72°C` | 中速 70% |
-| `>= 79°C` | 高速 85% |
-| `>= 86°C` | 满速保护 100% |
+| `< 60°C` | stopped |
+| `>= 65°C` | low, 50% |
+| `>= 72°C` | medium, 70% |
+| `>= 79°C` | high, 85% |
+| `>= 86°C` | full-speed protection, 100% |
 
-自定义温度只允许修改这 5 个温度点：
+Custom mode allows changing only these five temperature points:
 
-- 停止温度：`45-70°C`
-- 低速启动：`55-78°C`
-- 中速启动：`60-84°C`
-- 高速启动：`68-88°C`
-- 满速保护：`80-90°C`
+- Stop temperature: `45-70°C`
+- Low start: `55-78°C`
+- Medium start: `60-84°C`
+- High start: `68-88°C`
+- Full-speed protection: `80-90°C`
 
-要求：`停止 < 低速 < 中速 < 高速 < 满速保护`，相邻至少间隔 `3°C`。
+Rule: `stop < low < medium < high < full`, with at least `3°C` between adjacent
+points.
 
-## 温度建议
+## Temperature Suggestions
 
-| 偏好 | 停止 | 低速 | 中速 | 高速 | 满速保护 |
+| Preference | Stop | Low | Medium | High | Full protection |
 | --- | --- | --- | --- | --- | --- |
-| 静音优先 | 62°C | 68°C | 75°C | 82°C | 88°C |
-| 均衡推荐 | 60°C | 65°C | 72°C | 79°C | 86°C |
-| 散热优先 | 58°C | 63°C | 70°C | 77°C | 84°C |
+| Quiet first | 62°C | 68°C | 75°C | 82°C | 88°C |
+| Balanced | 60°C | 65°C | 72°C | 79°C | 86°C |
+| Cooling first | 58°C | 63°C | 70°C | 77°C | 84°C |
 
-温控内部会自动计算回落阈值，不需要手动设置回差。例如低速和中速之间的回落阈值
-会按整数向下取中间值，避免出现 74.5°C 这类小数判断。
+Downshift thresholds are calculated automatically. For example, the threshold
+between low and medium is the integer floor midpoint, so the daemon never uses
+ambiguous decimal thresholds such as `74.5°C`.
 
-## 保护策略
+## Protection Behavior
 
-- 控制温度取 CPU、Wi-Fi 0、Wi-Fi 1、网口等有效温度中的最高值。
-- 温度读数必须是 `0-150°C` 的有效数字，否则进入满速保护。
-- 温度使用最近 3 次读数平滑。
-- 风扇从停止启动时先 100% 踢转 1 秒，再降到目标档位。
-- 启动后 9 秒内不判定转速异常，避免传感器刷新慢导致误报。
-- 低速启动需要短暂确认，停转和降档需要等待温度稳定。
-- 风扇启动后至少运行 90 秒才允许停转。
+- Control temperature is the highest valid reading among CPU, Wi-Fi 0, Wi-Fi 1,
+  Ethernet, and other known key probes.
+- Temperature readings must be valid numbers between `0-150°C`; invalid values
+  trigger full-speed protection.
+- Temperature is smoothed over the latest 3 samples.
+- Fan starts with a 1-second 100% kick, then drops to the target level.
+- Startup RPM checks are delayed for 9 seconds.
+- Low-speed startup, stopping, and downshifts wait for temperature stability.
+- Once started, the fan must run for at least 90 seconds before stopping.
 
-## 常用命令
+## Useful Commands
 
 ```sh
 /usr/bin/fancontrol status
@@ -194,26 +211,29 @@ make package/luci-app-fancontrol/compile V=s
 logread -e fancontrol
 ```
 
-恢复系统默认控制：
+Restore system default fan control:
 
 ```sh
 /usr/bin/fancontrol system
 ```
 
-临时开启调试日志：
+Temporarily enable debug logging:
 
 ```sh
 touch /tmp/fancontrol.debug
 rm -f /tmp/fancontrol.debug
 ```
 
-## 安全说明
+## Safety Notes
 
-- 默认模式为 `system`，安装后不会立即接管风扇。
-- 固定风力模式只建议临时调试使用。
-- 风扇控制会写硬件 sysfs 节点，在 GL-MT3600BE 以外的设备上使用前请先确认兼容性。
-- 因固件不匹配、硬件不兼容或手动危险修改导致的硬件损坏，作者和贡献者不承担责任。
+- The default mode is `system`; the package does not take over fan control until
+  automatic or fixed mode is selected.
+- Fixed mode is intended for short-term testing only.
+- Fan control touches hardware sysfs nodes. Verify compatibility before using it
+  on devices other than GL-MT3600BE.
+- The author and contributors are not responsible for hardware damage caused by
+  incorrect firmware, incompatible hardware, or unsafe manual changes.
 
-## 许可证
+## License
 
 MIT. See [LICENSE](LICENSE).
